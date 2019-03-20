@@ -79,8 +79,8 @@ def paragraph(line: str, file: TextIOWrapper, line_count: int) -> tuple:
                 matched = True
                 break
         if matched: break
+        print("*%s*" %(line))
         text = (text[:-2] if linebreak else text) +  ("</br>" if linebreak else " ") + line
-
     return ("<p>%s</p>\n" %(putEmphasis(text[:-2] if text[-2:] == "  " else text)), line_count + 1)
 
 # When I wrote this code, only I and God knew what I was writing. (ofc if he actually exists)
@@ -172,7 +172,7 @@ def lists(line: str, file: TextIOWrapper, line_count: int) -> tuple:
             break
         full_list += line
     print("----\n%s\n----" %(full_list))
-    return (renderListItem(full_list, False, True, 0), line_count + 1)
+    return (renderListItem(full_list, False, False, 0), line_count + 1)
 
 md_tags = {
     re.compile(r"#{1,6}\s.*\n?"): headers,                                         # Headers
@@ -182,4 +182,24 @@ md_tags = {
 }
 
 # --- Rendering ---
-# To be written
+
+def render(file: TextIOWrapper, line_count_display: bool = False):
+    line_count = 1
+    result = ""
+    while True:
+        line = file.readline()
+        if line == "": break
+        for i in md_tags:
+            if re.match(i, line):
+                if line_count_display: result += str(line_count)
+                output = md_tags[i](line, file, line_count)
+                result += output[0]
+                line_count = output[1]
+                break
+            print("---\n%s\n---" %(result))
+    f = open("output.html", "w")
+    f.write(result)
+    f.close()
+
+file = open("readme.md")
+type(render(file, True))
