@@ -183,7 +183,7 @@ md_tags = {
 
 # --- Rendering ---
 
-def render(file: TextIOWrapper, line_count_display: bool = False):
+def render(file: TextIOWrapper, line_count_display: bool = False) -> TextIOWrapper:
     line_count = 1
     result = ""
     while True:
@@ -199,9 +199,9 @@ def render(file: TextIOWrapper, line_count_display: bool = False):
             print("---\n%s\n---" %(result))
     f = open("output.html", "w")
     f.write(result)
-    f.close()
-
+    return f
 # --- Testing ---
 file = open("readme.md")
-render(file, True)
+f = render(file, True)
 file.close()
+f.close()
