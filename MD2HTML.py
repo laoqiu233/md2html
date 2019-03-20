@@ -202,4 +202,4 @@ def render(file: TextIOWrapper, line_count_display: bool = False):
     f.close()
 
 file = open("readme.md")
-type(render(file, True))
+render(file, True)
