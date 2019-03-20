@@ -201,5 +201,7 @@ def render(file: TextIOWrapper, line_count_display: bool = False):
     f.write(result)
     f.close()
 
+# --- Testing ---
 file = open("readme.md")
 render(file, True)
+file.close()
