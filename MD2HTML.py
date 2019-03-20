@@ -5,7 +5,15 @@ Please read all the information in the readme.md file before trying read the cod
 """
 from io import StringIO, TextIOWrapper
 from functools import reduce
-import re
+import re, time
+
+def count_time(func):
+    def re_func(*args):
+        start = time.time()
+        re = func(*args)
+        print(time.time() - start)
+        return re
+    return re_func
 
 # --- Constants ---
 pattern_line_break = re.compile(r"(\s|\t)*\n")
@@ -79,7 +87,6 @@ def paragraph(line: str, file: TextIOWrapper, line_count: int) -> tuple:
                 matched = True
                 break
         if matched: break
-        print("*%s*" %(line))
         text = (text[:-2] if linebreak else text) +  ("</br>" if linebreak else " ") + line
     return ("<p>%s</p>\n" %(putEmphasis(text[:-2] if text[-2:] == "  " else text)), line_count + 1)
 
@@ -127,9 +134,7 @@ def renderListItem(text_: str, text_par: bool, child_par: bool, tab_length: int)
                 if re.match(pattern_line_break, line):
                     pos_ = f.tell()
                     line_ = f.readline()
-                    print(line_)
                     if re.match(pattern_item_child, line_):
-                        print(True)
                         child_par_ = True
                     f.seek(pos_)
                     del pos_
@@ -160,19 +165,40 @@ def lists(line: str, file: TextIOWrapper, line_count: int) -> tuple:
         Return values: Standard m2h function outputs
     """
     tags_in_lists = [pattern_line_break, re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?"), re.compile(r".+")]
+    pattern_item = re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?")
+    type_ = r"(\+|-|\*)" if re.match(r"(\+|-|\*)", re.match(pattern_item, line).group(1)) else r"(\d+\.)"
+    pattern_current_item = re.compile(r"%s\s(.*)\n?" %(type_))
     full_list = line
+    child_par = False
     while True:
         pos = file.tell()
         line = file.readline()
         if line == "": break
         line_count += 1
-        if reduce(lambda x,y: x | y, [1 if i not in tags_in_lists and re.match(i, line) else 0 for i in md_tags]): 
+        if line == "\n":
+            list_end = False
+            while True:
+                pos_ = file.tell()
+                line = file.readline()
+                if line == "": break
+                line_count += 1
+                if line != "\n" and not re.match(pattern_current_item, line):
+                    list_end = True
+                    f.seek(pos_)
+                    line_count -= 1
+                    del pos_
+                    break
+                else:
+                    child_par = True
+                    break
+            if list_end: break
+        if reduce(lambda x,y: x | y, [1 if i not in tags_in_lists and re.match(i, line) else 0 for i in md_tags]) or (re.match(pattern_item, line) and not re.match(pattern_current_item, line)): 
             file.seek(pos)
             line_count -= 1
             break
         full_list += line
-    print("----\n%s\n----" %(full_list))
-    return (renderListItem(full_list, False, False, 0), line_count + 1)
+    #print("----\n%s\n----" %(full_list))
+    return (putEmphasis(renderListItem(full_list, False, child_par, 0)), line_count + 1)
 
 md_tags = {
     re.compile(r"#{1,6}\s.*\n?"): headers,                                         # Headers
@@ -183,7 +209,11 @@ md_tags = {
 
 # --- Rendering ---
 
+@count_time
 def render(file: TextIOWrapper, line_count_display: bool = False) -> TextIOWrapper:
+    """
+
+    """
     line_count = 1
     result = ""
     while True:
@@ -196,11 +226,12 @@ def render(file: TextIOWrapper, line_count_display: bool = False) -> TextIOWrapp
                 result += output[0]
                 line_count = output[1]
                 break
-            print("---\n%s\n---" %(result))
-    f = open("output.html", "w")
+    f = open("%s.html" %(re.match(r"(.+)\.md", file.name).group(1)), "w")
     f.write(result)
     return f
+
 # --- Testing ---
+
 file = open("readme.md")
 f = render(file, True)
 file.close()
