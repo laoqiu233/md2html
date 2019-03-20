@@ -2,6 +2,9 @@
 !!!IMPORTANT!!!
 Please read all the information in the readme.md file before trying read the code below.
 (I haven't wrote it yet, I'll write it tomorrow its very late and I want some sleep.)
+update 2019/3/21
+im so fucking lazy
+tomorrow it is then
 """
 from io import StringIO, TextIOWrapper
 from functools import reduce
@@ -65,8 +68,10 @@ def headers(line: str, file: TextIOWrapper, line_count: int) -> tuple:
         Input values:   Standard m2h function inputs
         Output values:  Standard m2h function outputs
     """
-    match = re.match(r"(#{1,6})\s(.*)", line)
+    match = re.match(r"(#{1,6})\s(.*)\b(?:\s+#+)?\n?", line)
     length = len(match.group(1))
+    print(match)
+    print(match.group(2))
     return ("<h%s>%s</h%s>\n" %(length, putEmphasis(match.group(2)), length), line_count + 1)
 
 def paragraph(line: str, file: TextIOWrapper, line_count: int) -> tuple:
@@ -207,10 +212,51 @@ def lists(line: str, file: TextIOWrapper, line_count: int) -> tuple:
     #print("----\n%s\n----" %(full_list))
     return (putEmphasis(renderListItem(full_list, False, child_par, 0)), line_count + 1)
 
+def code_reverse_quote(line: str, file: TextIOWrapper, line_count: int) -> tuple:
+    """
+        Renders code blocks started with three reverse quotation marks.
+        Input values:   Standard m2h function inputs
+        Output values:  Standard m2h function outputs
+    """
+    result = "<pre><code>\n"
+    while True:
+        line = file.readline()
+        print(line)
+        line_count += 1
+        if line == "" or re.match(r"```\n?", line): break
+        result += line
+    result += "</code></pre>\n"
+    return (result, line_count + 1)
+
+def code_tab(line: str, file: TextIOWrapper, line_count: int) -> tuple:
+    """
+        Renders code blocks started with tab or four spaces.
+        Input values:   Standard m2h function inputs
+        Output values:  Standard m2h function outputs
+    """
+    pattern_code = re.compile(r"(\t|\s{4})(.*\n?)")
+    result = "<pre><code>\n"
+    result += re.match(pattern_code, line).group(2)
+    while True:
+        pos = file.tell()
+        line = file.readline()
+        line_count += 1
+        if line =="": break
+        match = re.match(pattern_code, line)
+        if not match:
+            file.seek(pos)
+            line_count -= 1
+            break
+        result += match.group(2)
+    result += "</code></pre>\n"
+    return (result, line_count + 1)
+
 md_tags = {
-    re.compile(r"#{1,6}\s.*\n?"): headers,                                         # Headers
+    re.compile(r"#{1,6}.*\b(?:\s+#+)?\n?"): headers,                                         # Headers
     pattern_line_break: lambda line,file,line_count: ("</br>\n", line_count + 1),  # Line breaks
     re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?"): lists,                                # Lists
+    re.compile(r"```\n?"): code_reverse_quote,                                     # Code blocks with reversed quotation marks
+    re.compile(r"(\t|\s{4})(.*\n?)"): code_tab,                                       # Code blocks with tabs
     re.compile(r".+"): paragraph,                                                  # Paragraphs
 }
 
@@ -243,6 +289,6 @@ def render(file: TextIOWrapper, line_count_display: bool = False) -> TextIOWrapp
 # --- Testing ---
 
 file = open("readme.md")
-f = render(file, True)
+f = render(file)
 file.close()
 f.close()

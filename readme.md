@@ -1,4 +1,4 @@
-# MD 2 HTML PARSER  
+# MD 2 HTML PARSER #
 Made by Dmitri Qiu.
 ## Description
 I'll write it tomorrow.
@@ -27,3 +27,17 @@ Shuchi senpai
 ![best boi](https://static.tvtropes.org/pmwiki/pub/images/cat_6.jpg "Id smash")
 
 ![maxwell the cat](https://vignette.wikia.nocookie.net/housepetscomic/images/4/44/MaxProfile2.png/revision/latest?cb=20150712233753 "qt3.14")
+
+    This is code
+    This is the second line of the code
+``` 
+This is code too
+```
+
+>A great philosopher once said:
+>>~~**Yiff** me daddy *uwu*~~  
+And then he wrote this piece of code:
+>```python
+>  def yiff():
+>      print("Owo whats dis?")
+>```
