@@ -39,11 +39,11 @@ def links(match: re.Match) -> str:
 def images(match: re.Match) -> str:
     text, url = match.groups()
     url = url.split(" ", 1)
-    #print(url, match.groups())
+    print(url, match.groups())
     return r"<img src=%s%s%s>" %("\"" + url[0] + "\"", " alt=%s" %("\"" + text + "\""), " title=%s" %(url[1]) if len(url) >= 2 else "")
 
 emphasis_tags = {   
-    re.compile(r"\!\[(.*)\]\s?\((.+?)\)"): images,                                                            # Images
+    re.compile(r"\!\[(.*?)\]\s?\((.+?)\)"): images,                                                            # Images
     re.compile(r"\[(.+)\]\s?\((.+?)\)"): links,                                                               # Hyper links
     re.compile(r"(?!<img\ssrc=\".*)[*_]{2}(.+)[*_]{2}(?!.*\">)"): lambda x: "<b>%s</b>" %(x.group(1)),     # Bold
     re.compile(r"(?!<img\ssrc=\".*)[*_](.+)[*_](?!.*\">)"): lambda x: "<i>%s</i>" %(x.group(1)),           # Italics
@@ -177,7 +177,7 @@ def lists(line: str, file: TextIOWrapper, line_count: int) -> tuple:
         Input values:   - Standard m2h function inputs
         Return values:  - Standard m2h function outputs
     """
-    tags_in_lists = [pattern_line_break, re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?"), re.compile(r".+")]
+    tags_in_lists = [pattern_line_break, re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?"), re.compile(r".+"), re.compile(r"(\t|\s{4})(.*\n?)")]
     pattern_item = re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?")
     type_ = r"(\+|-|\*)" if re.match(r"(\+|-|\*)", re.match(pattern_item, line).group(1)) else r"(\d+\.)"
     pattern_current_item = re.compile(r"%s\s(.*)\n?" %(type_))
@@ -286,7 +286,6 @@ def table(line: str, file: TextIOWrapper, line_count: int) -> tuple:
         return ("<p>%s</p>\n" %(first_line if first_line[-1] != "\n" else line[-1:]), line_count)
     del first_line
     align = "".join(re.match(r"\|((?::*-{3,}:*\|){%s})(\s*:*-{3,}:*\s*)\|" %(length-1), line).groups()).split("|")
-    print(align)
     for index, i in enumerate(align):
         if re.match(r"\s*:-+:\s*", i):
             align[index] = " style=\"text-align:center;border:1px solid black;width:33%;\""
@@ -297,9 +296,6 @@ def table(line: str, file: TextIOWrapper, line_count: int) -> tuple:
         else:
             align[index] = ""
     result += "<tbody>\n" + " " * 4 + "<tr>\n"
-    print(length)
-    print(head)
-    print(align)
     result += "\n".join([" " * 8 + "<th%s>%s</th>" %(align[index], i) for index, i in enumerate(head)])
     result += "\n" + " " * 4 + "</tr>\n"
     pattern_row = re.compile(r"\|?((?:\s*.+\s*\|){%s})(\s*[^\|\n]+\s*)\|?" %(length - 1))
@@ -318,7 +314,7 @@ def table(line: str, file: TextIOWrapper, line_count: int) -> tuple:
     return (putEmphasis(result), line_count)
 
 md_tags = {
-    re.compile(r"#{1,6}.*\b(?:\s+#+)?\n?"): headers,                               # Headers
+    re.compile(r"(#{1,6})\s(.*(?:~|_|\*|\b))(?:\s+#+)?\n"): headers,               # Headers
     pattern_line_break: lambda line,file,line_count: ("</br>\n", line_count + 1),  # Line breaks
     re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?"): lists,                                # Lists
     re.compile(r"```\n?"): code_reverse_quote,                                     # Code blocks with reversed quotation marks

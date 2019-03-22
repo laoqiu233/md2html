@@ -10,13 +10,13 @@ MD2HTML is licensed under [GNU GPL V3.0](https://choosealicense.com/licenses/gpl
 
 ## Capybara facts
 * Capybaras are cute!  
-![Capybara image](https://media1.fdncms.com/orlando/imager/u/blog/2516965/sfds.jpg?cb=1471435085 "A capybara")
+#![Capybara image](https://media1.fdncms.com/orlando/imager/u/blog/2516965/sfds.jpg?cb=1471435085 "A capybara")#
 
 * Capybaras come in diffrent colors:
     1. Yellow
     2. Capybara color
     3. Spikey dude  
-![Spikey dude](https://a-z-animals.com/media/animals/images/180x170/capybara1.jpg "This is a spikey dude")
+#![Spikey dude](https://a-z-animals.com/media/animals/images/180x170/capybara1.jpg "This is a spikey dude")#
 
 * Capybaras are chill af
 
@@ -49,3 +49,4 @@ This is code too
 henlo|this|is test
 |*This*|**is**|~~test~~|
 |with|~~emphasis~~|heaw ya my chigga|
+^I don't know why this table doesn't render properly on github, it works fine using my parser
