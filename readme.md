@@ -36,8 +36,10 @@ This is code too
 
 >A great philosopher once said:
 >>~~**Yiff** me daddy *uwu*~~  
-And then he wrote this piece of code:
+>>And then he wrote this piece of code:  
 >```python
->  def yiff():
->      print("Owo whats dis?")
+>cat = 1
+>def yiff():
+>    print ("Owo whats dis?")
+>    # Aww yes give me the good ***y e e f s***
 >```

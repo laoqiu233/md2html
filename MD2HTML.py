@@ -2,9 +2,11 @@
 !!!IMPORTANT!!!
 Please read all the information in the readme.md file before trying read the code below.
 (I haven't wrote it yet, I'll write it tomorrow its very late and I want some sleep.)
-update 2019/3/21
+update 2019/3/21 00:30 or something i forgot
 im so fucking lazy
-tomorrow it is then
+tomorrow it is then 
+update 2019/3/21 afternoon
+ill write the docs when im finished
 """
 from io import StringIO, TextIOWrapper
 from functools import reduce
@@ -26,8 +28,8 @@ pattern_line_break = re.compile(r"(\s|\t)*\n")
 def links(match: re.Match) -> str:
     """
         Renders a hyperlink tag formatted in HTML
-        Input values:   Match object of the matched md tag
-        Output values:  Rendered text
+        Input values:   - Match object of the matched md tag
+        Output values:  - Rendered text
     """
     text, url = match.groups()
     url = url.split(" ", 1)
@@ -53,8 +55,8 @@ emphasis_tags = {
 def putEmphasis(line: str) -> str:
     """
         Replace all markdown emphasis tags with html tags.
-        Input values:   Text with md emphasis tags in it
-        Output values:  Rendered text
+        Input values:   - Text with md emphasis tags in it
+        Output values:  - Rendered text
     """
     for i in emphasis_tags:
         line = re.sub(i, emphasis_tags[i], line)
@@ -65,10 +67,10 @@ def putEmphasis(line: str) -> str:
 def headers(line: str, file: TextIOWrapper, line_count: int) -> tuple:
     """
         Renders a html formatted header tag.
-        Input values:   Standard m2h function inputs
-        Output values:  Standard m2h function outputs
+        Input values:   - Standard m2h function inputs
+        Output values:  - Standard m2h function outputs
     """
-    match = re.match(r"(#{1,6})\s(.*)\b(?:\s+#+)?\n?", line)
+    match = re.match(r"(#{1,6})\s(.*(?:~|_|\*|\b))(?:\s+#+)?\n", line)
     length = len(match.group(1))
     print(match)
     print(match.group(2))
@@ -77,8 +79,8 @@ def headers(line: str, file: TextIOWrapper, line_count: int) -> tuple:
 def paragraph(line: str, file: TextIOWrapper, line_count: int) -> tuple:
     """
         Returns a html formatted paragraph tag.
-        Input values:   Standard m2h function inputs
-        Output values:  Standard m2h function outputs
+        Input values:   - Standard m2h function inputs
+        Output values:  - Standard m2h function outputs
     """
     pattern = re.compile(".+")
     text = line[:-1] if line[-1:] == "\n" else line
@@ -110,11 +112,11 @@ def renderListItem(text_: str, text_par: bool, child_par: bool, tab_length: int)
         (Including text and other lists)
         Returns rendered html formatted text
         Comments are left for future debugging purposes
-        Input values:   text_: The text needed to be rendered
-                        text_par: Whether or not the text in this item needs to be put in a <p> tag
-                        child_par: Whether or not the text in the children of this item needs to be put in a <p> tag
-                        tab_length: The tab length of this item
-        Output values:  Rendered text
+        Input values:   - text_: The text needed to be rendered
+                        - text_par: Whether or not the text in this item needs to be put in a <p> tag
+                        - child_par: Whether or not the text in the children of this item needs to be put in a <p> tag
+                        - tab_length: The tab length of this item
+        Output values:  - Rendered text
     """
     pattern_item = r"(\s{%s,%s}|\t{%s})(\+|-|\*|\d+\.)\s(.*\n?)" %(tab_length * 4, tab_length * 4 + 3, tab_length)
     pattern_item_child = r"(\s{%s,%s}|\t{%s})(\+|-|\*|\d+\.)\s(.*)\n?" %(tab_length * 4 + 4, tab_length * 4 + 7, tab_length + 1)
@@ -173,8 +175,8 @@ def lists(line: str, file: TextIOWrapper, line_count: int) -> tuple:
     """
         Reads a single list from the file and renders it into html by calling
         the function renderListItem()
-        Input values:   Standard m2h function inputs
-        Return values:  Standard m2h function outputs
+        Input values:   - Standard m2h function inputs
+        Return values:  - Standard m2h function outputs
     """
     tags_in_lists = [pattern_line_break, re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?"), re.compile(r".+")]
     pattern_item = re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?")
@@ -215,13 +217,12 @@ def lists(line: str, file: TextIOWrapper, line_count: int) -> tuple:
 def code_reverse_quote(line: str, file: TextIOWrapper, line_count: int) -> tuple:
     """
         Renders code blocks started with three reverse quotation marks.
-        Input values:   Standard m2h function inputs
-        Output values:  Standard m2h function outputs
+        Input values:   - Standard m2h function inputs
+        Output values:  - Standard m2h function outputs
     """
     result = "<pre><code>\n"
     while True:
         line = file.readline()
-        print(line)
         line_count += 1
         if line == "" or re.match(r"```\n?", line): break
         result += line
@@ -231,8 +232,8 @@ def code_reverse_quote(line: str, file: TextIOWrapper, line_count: int) -> tuple
 def code_tab(line: str, file: TextIOWrapper, line_count: int) -> tuple:
     """
         Renders code blocks started with tab or four spaces.
-        Input values:   Standard m2h function inputs
-        Output values:  Standard m2h function outputs
+        Input values:   - Standard m2h function inputs
+        Output values:  - Standard m2h function outputs
     """
     pattern_code = re.compile(r"(\t|\s{4})(.*\n?)")
     result = "<pre><code>\n"
@@ -251,24 +252,48 @@ def code_tab(line: str, file: TextIOWrapper, line_count: int) -> tuple:
     result += "</code></pre>\n"
     return (result, line_count + 1)
 
+def block_quote(line: str, file: TextIOWrapper, line_count: int) -> tuple:
+    pattern_block_quote = re.compile(r">?\s?(.*\n?)")
+    result = ""
+    result += re.match(pattern_block_quote, line).group(1)
+    block_quote_md_tags = [re.compile(r">\s?.*"), re.compile(r".+")]
+    while True:
+        pos = file.tell()
+        line = file.readline()
+        line_count += 1
+        if line == "": break
+        if reduce(lambda x,y: x | y, [1 if re.match(i, line) and i not in block_quote_md_tags else 0 for i in md_tags]):
+            file.seek(pos)
+            line_count -= 1
+            break
+        result += re.match(pattern_block_quote, line).group(1)
+    TempIO = StringIO(result)
+    result = render(TempIO)
+    del TempIO
+    result = "<blockquote>\n" + result + "</blockquote>\n"
+    return (result, line_count + 1)
+
 md_tags = {
-    re.compile(r"#{1,6}.*\b(?:\s+#+)?\n?"): headers,                                         # Headers
+    re.compile(r"#{1,6}.*\b(?:\s+#+)?\n?"): headers,                               # Headers
     pattern_line_break: lambda line,file,line_count: ("</br>\n", line_count + 1),  # Line breaks
     re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?"): lists,                                # Lists
     re.compile(r"```\n?"): code_reverse_quote,                                     # Code blocks with reversed quotation marks
-    re.compile(r"(\t|\s{4})(.*\n?)"): code_tab,                                       # Code blocks with tabs
+    re.compile(r"(\t|\s{4})(.*\n?)"): code_tab,                                    # Code blocks with tabs
+    re.compile(r">\s?.*"): block_quote,
     re.compile(r".+"): paragraph,                                                  # Paragraphs
 }
 
 # --- Rendering ---
 
 @count_time
-def render(file: TextIOWrapper, line_count_display: bool = False) -> TextIOWrapper:
+def render(file: TextIOWrapper, line_count_display: bool = False, return_file: bool = False) -> TextIOWrapper:
     """
         Takes in a file and returns the rendered HTML formatted file.
-        Input values:   The file needed to be rendered
-                        Display the count of the line being rendered
-        Output values:  Rendered file
+        Input values:   - The file needed to be rendered
+                        - Return a TextIO file type or a string type.
+                        (Will create a html file if set to true)
+                        - Display the count of the line being rendered
+        Output values:  - Rendered file
     """
     line_count = 1
     result = ""
@@ -282,13 +307,16 @@ def render(file: TextIOWrapper, line_count_display: bool = False) -> TextIOWrapp
                 result += output[0]
                 line_count = output[1]
                 break
-    f = open("%s.html" %(re.match(r"(.+)\.md", file.name).group(1)), "w")
-    f.write(result)
-    return f
+    if return_file:
+        f = open("%s.html" %(re.match(r"(.+)\.md", file.name).group(1)), "w")
+        f.write(result)
+        return f
+    else:
+        return result
 
 # --- Testing ---
 
 file = open("readme.md")
-f = render(file)
+f = render(file, False, True)
 file.close()
 f.close()
