@@ -37,14 +37,14 @@ def links(match: re.Match) -> str:
     return "<a%s%s>%s</a>" %(" href=%s" %(url[0]), " title=%s" %(url[1]) if len(url) >=2 else "", text)
 
 def images(match: re.Match) -> str:
-    print(match.groups())
     text, url = match.groups()
     url = url.split(" ", 1)
+    #print(url, match.groups())
     return r"<img src=%s%s%s>" %("\"" + url[0] + "\"", " alt=%s" %("\"" + text + "\""), " title=%s" %(url[1]) if len(url) >= 2 else "")
 
 emphasis_tags = {   
-    re.compile(r"\!\[(.*)\]\((.+?)\)"): images,                                                            # Images
-    re.compile(r"\[(.+)\]\((.+?)\)"): links,                                                               # Hyper links
+    re.compile(r"\!\[(.*)\]\s?\((.+?)\)"): images,                                                            # Images
+    re.compile(r"\[(.+)\]\s?\((.+?)\)"): links,                                                               # Hyper links
     re.compile(r"(?!<img\ssrc=\".*)[*_]{2}(.+)[*_]{2}(?!.*\">)"): lambda x: "<b>%s</b>" %(x.group(1)),     # Bold
     re.compile(r"(?!<img\ssrc=\".*)[*_](.+)[*_](?!.*\">)"): lambda x: "<i>%s</i>" %(x.group(1)),           # Italics
     re.compile(r"(?!<img\ssrc=\".*)~{2}(.+)~{2}(?!.*\">)"): lambda x: "<s>%s</s>" %(x.group(1)),           # Strike through
@@ -72,7 +72,6 @@ def headers(line: str, file: TextIOWrapper, line_count: int) -> tuple:
     """
     match = re.match(r"(#{1,6})\s(.*(?:~|_|\*|\b))(?:\s+#+)?\n", line)
     length = len(match.group(1))
-    print(match)
     print(match.group(2))
     return ("<h%s>%s</h%s>\n" %(length, putEmphasis(match.group(2)), length), line_count + 1)
 
@@ -273,6 +272,51 @@ def block_quote(line: str, file: TextIOWrapper, line_count: int) -> tuple:
     result = "<blockquote>\n" + result + "</blockquote>\n"
     return (result, line_count + 1)
 
+def table(line: str, file: TextIOWrapper, line_count: int) -> tuple:
+    pattern_row = re.compile(r"\|?((?:\s*.+\s*\|)+)(\s*[^\|\n]+\s*)\|?")
+    result = "<table style=\"border:1px solid black;min-width: 500px\">\n"
+    head = "".join(re.match(pattern_row, line).groups()).split("|")
+    length = len(head)
+    first_line = line
+    pos = file.tell()
+    line = file.readline()
+    line_count += 1
+    if line == "" or not re.match(r"\|((?::*-{3,}:*\|){%s})(\s*:*-{3,}:*\s*)\|" %(length-1), line):
+        file.seek(pos)
+        return ("<p>%s</p>\n" %(first_line if first_line[-1] != "\n" else line[-1:]), line_count)
+    del first_line
+    align = "".join(re.match(r"\|((?::*-{3,}:*\|){%s})(\s*:*-{3,}:*\s*)\|" %(length-1), line).groups()).split("|")
+    print(align)
+    for index, i in enumerate(align):
+        if re.match(r"\s*:-+:\s*", i):
+            align[index] = " style=\"text-align:center;border:1px solid black;width:33%;\""
+        elif re.match(r"\s*:-+\s*", i):
+            align[index] = " style=\"text-align:left;border:1px solid black;width:33%;\""
+        elif re.match(r"\s*-+:\s*", i):
+            align[index] = " style=\"text-align:right;border:1px solid black;width:33%;\""
+        else:
+            align[index] = ""
+    result += "<tbody>\n" + " " * 4 + "<tr>\n"
+    print(length)
+    print(head)
+    print(align)
+    result += "\n".join([" " * 8 + "<th%s>%s</th>" %(align[index], i) for index, i in enumerate(head)])
+    result += "\n" + " " * 4 + "</tr>\n"
+    pattern_row = re.compile(r"\|?((?:\s*.+\s*\|){%s})(\s*[^\|\n]+\s*)\|?" %(length - 1))
+    while True:
+        line = file.readline()
+        line_count += 1
+        match = re.match(pattern_row, line)
+        if line == "" or not match:
+            line_count -= 1
+            break
+        items = "".join(match.groups()).split("|")
+        result += " " * 4 + "<tr>\n"
+        result += "\n".join([" " * 8 + "<td%s>%s</td>" %(align[index], i) for index, i in enumerate(items)])
+        result += "\n" +  " " * 4 + "</tr>\n"
+    result += "</tbody>\n</table>\n"
+    return (putEmphasis(result), line_count)
+
 md_tags = {
     re.compile(r"#{1,6}.*\b(?:\s+#+)?\n?"): headers,                               # Headers
     pattern_line_break: lambda line,file,line_count: ("</br>\n", line_count + 1),  # Line breaks
@@ -280,6 +324,7 @@ md_tags = {
     re.compile(r"```\n?"): code_reverse_quote,                                     # Code blocks with reversed quotation marks
     re.compile(r"(\t|\s{4})(.*\n?)"): code_tab,                                    # Code blocks with tabs
     re.compile(r">\s?.*"): block_quote,
+    re.compile(r"\|?(\s*.*\s*\|)+(\s*.+\s*)\|?"): table,
     re.compile(r".+"): paragraph,                                                  # Paragraphs
 }
 

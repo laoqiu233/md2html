@@ -24,9 +24,9 @@ MD2HTML is licensed under [GNU GPL V3.0](https://choosealicense.com/licenses/gpl
 
 ## Cool cats
 Shuchi senpai  
-![best boi](https://static.tvtropes.org/pmwiki/pub/images/cat_6.jpg "Id smash")
-
-![maxwell the cat](https://vignette.wikia.nocookie.net/housepetscomic/images/4/44/MaxProfile2.png/revision/latest?cb=20150712233753 "qt3.14")
+![best boi](https://static.tvtropes.org/pmwiki/pub/images/cat_6.jpg "Id smash")  
+Maxwell the cat  
+![maxwell the cat](Maxwell.png "qt3.14")
 
     This is code
     This is the second line of the code
@@ -43,3 +43,9 @@ This is code too
 >    print ("Owo whats dis?")
 >    # Aww yes give me the good ***y e e f s***
 >```
+
+|Table|Test|Henlo|
+|:---|---:|:---:|---|
+henlo|this|is test
+|*This*|**is**|~~test~~|
+|with|~~emphasis~~|heaw ya my chigga|
