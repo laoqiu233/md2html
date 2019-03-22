@@ -39,7 +39,7 @@ def links(match: re.Match) -> str:
 def images(match: re.Match) -> str:
     text, url = match.groups()
     url = url.split(" ", 1)
-    print(url, match.groups())
+    #print(url, match.groups())
     return r"<img src=%s%s%s>" %("\"" + url[0] + "\"", " alt=%s" %("\"" + text + "\""), " title=%s" %(url[1]) if len(url) >= 2 else "")
 
 emphasis_tags = {   
@@ -70,7 +70,7 @@ def headers(line: str, file: TextIOWrapper, line_count: int) -> tuple:
         Input values:   - Standard m2h function inputs
         Output values:  - Standard m2h function outputs
     """
-    match = re.match(r"(#{1,6})\s(.*(?:~|_|\*|\b))(?:\s+#+)?\n", line)
+    match = re.match(r"(#{1,6})\s(.*(?:~|_|\*|\b))(?:\s+#+)?\n?", line)
     length = len(match.group(1))
     print(match.group(2))
     return ("<h%s>%s</h%s>\n" %(length, putEmphasis(match.group(2)), length), line_count + 1)
@@ -298,13 +298,15 @@ def table(line: str, file: TextIOWrapper, line_count: int) -> tuple:
     result += "<tbody>\n" + " " * 4 + "<tr>\n"
     result += "\n".join([" " * 8 + "<th%s>%s</th>" %(align[index], i) for index, i in enumerate(head)])
     result += "\n" + " " * 4 + "</tr>\n"
-    pattern_row = re.compile(r"\|?((?:\s*.+\s*\|){%s})(\s*[^\|\n]+\s*)\|?" %(length - 1))
+    pattern_row = re.compile(r"\|?((?:\s*.+?\s*\|){%s})(\s*[^\|\n]+\s*)\|?" %(length - 1))
     while True:
+        pos = file.tell()
         line = file.readline()
         line_count += 1
-        match = re.match(pattern_row, line)
+        match = re.match(pattern_row, line) 
         if line == "" or not match:
             line_count -= 1
+            file.seek(pos)
             break
         items = "".join(match.groups()).split("|")
         result += " " * 4 + "<tr>\n"
@@ -314,7 +316,7 @@ def table(line: str, file: TextIOWrapper, line_count: int) -> tuple:
     return (putEmphasis(result), line_count)
 
 md_tags = {
-    re.compile(r"(#{1,6})\s(.*(?:~|_|\*|\b))(?:\s+#+)?\n"): headers,               # Headers
+    re.compile(r"(#{1,6})\s(.*(?:~|_|\*|\b))(?:\s+#+)?\n?"): headers,               # Headers
     pattern_line_break: lambda line,file,line_count: ("</br>\n", line_count + 1),  # Line breaks
     re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?"): lists,                                # Lists
     re.compile(r"```\n?"): code_reverse_quote,                                     # Code blocks with reversed quotation marks

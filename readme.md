@@ -48,5 +48,5 @@ This is code too
 |:---|---:|:---:|---|
 henlo|this|is test
 |*This*|**is**|~~test~~|
-|with|~~emphasis~~|heaw ya my chigga|  
+|with|~~emphasis~~|heaw ya my chigga|
 ^I don't know why this table doesn't render properly on github, it works fine using my parser
