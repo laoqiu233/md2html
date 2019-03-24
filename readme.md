@@ -16,7 +16,7 @@ Congrats! You rendered a MD file to html using M2H for the first time!
 ## Licensing
 MD2HTML is licensed under [GNU GPL V3.0](https://choosealicense.com/licenses/gpl-3.0/ "The license")  
 (The license is longer than my code dude tf)
-
+---
 # Everything down below is written for *testing purposes*
 ## Capybara facts
 * Capybaras are cute!  
@@ -36,8 +36,8 @@ MD2HTML is licensed under [GNU GPL V3.0](https://choosealicense.com/licenses/gpl
 Shuchi senpai  
 ![best boi](https://static.tvtropes.org/pmwiki/pub/images/cat_6.jpg "Id smash")  
 Maxwell the cat  
-![maxwell the cat](Maxwell.png "qt3.14")
-
+![maxwell the cat](Maxwell.png "qt3.14")  
+^ This won't render on github because this uses the dedicated image folder feature in the parser
     This is code
     This is the second line of the code
 ``` 
