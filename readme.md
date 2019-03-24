@@ -6,8 +6,10 @@ MD2HTML parser is a easy to use [Markdown](https://daringfireball.net/projects/m
 Import MD2HTML to your project by `import MD2HTML as m2h` and then write the following code:
 ```python
 with open("Your md doc.md") as doc:
-    rendered = MD2HTML.render(doc, False, True) # The last two arguments means not displaying line count and return as file
-    rendered.close()
+    renderer = m2h.Renderer()
+    result = renderer.render(doc, False, True, "Your/Image/Folder") # The first boolean is for not displaying line count
+                                                                    # The second is for return as file object
+    result.close()
 ```
 Then, you will see a file named `"Your md doc.html"` show up in your project folder.
 Congrats! You rendered a MD file to html using M2H for the first time!
@@ -16,7 +18,6 @@ MD2HTML is licensed under [GNU GPL V3.0](https://choosealicense.com/licenses/gpl
 (The license is longer than my code dude tf)
 
 # Everything down below is written for *testing purposes*
-
 ## Capybara facts
 * Capybaras are cute!  
 #![Capybara image](https://media1.fdncms.com/orlando/imager/u/blog/2516965/sfds.jpg?cb=1471435085 "A capybara")#
