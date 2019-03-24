@@ -1,7 +1,15 @@
 <h1>MD 2 HTML PARSER</h1>
 <p>Made by Dmitri Qiu.</p>
 <h2>Description</h2>
-<p>I'll write it tomorrow.</p>
+<p>MD2HTML parser is a easy to use <a href=https://daringfireball.net/projects/markdown/ title="About Markdown">Markdown</a> parser/renderer written in Python. It's extendable, fast, and user friendly.</p>
+<h2>Usage</h2>
+<p>Import MD2HTML to your project by <code>import MD2HTML as m2h</code> and then write the following code:</p>
+<pre><code>
+with open("Your md doc.md") as doc:
+    rendered = MD2HTML.render(doc, False, True) # The last two arguments means not displaying line count and return as file
+    rendered.close()
+</code></pre>
+<p>Then, you will see a file named <code>"Your md doc.html"</code> show up in your project folder. Congrats! You rendered a MD file to html using M2H for the first time!</p>
 <h2>Licensing</h2>
 <p>MD2HTML is licensed under <a href=https://choosealicense.com/licenses/gpl-3.0/ title="The license">GNU GPL V3.0</a></br>(The license is longer than my code dude tf)</p>
 <h1>Everything down below is written for <i>testing purposes</i></h1>
@@ -33,7 +41,7 @@
     </li>
 </ul>
 <h2>Cool cats</h2>
-<p>Shuchi senpai</br><img src="https://static.tvtropes.org/pmwiki/pub/images/cat_6.jpg" alt="best boi" title="Id smash"></br>Maxwell the cat</br><img src="Maxwell.png" alt="maxwell the cat" title="qt3.14"></p>
+<p>Shuchi senpai</br><img src="https://static.tvtropes.org/pmwiki/pub/images/cat_6.jpg" alt="best boi" title="Id smash"></br>Maxwell the cat</br><img src="imgs\Maxwell.png" alt="maxwell the cat" title="qt3.14"></p>
 <pre><code>
 This is code
 This is the second line of the code
