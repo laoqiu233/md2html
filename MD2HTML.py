@@ -80,7 +80,7 @@ class Renderer:
 
     strike = lambda self, x: "<s>%s</s>" %(x.group(1))
     
-    code_span = lambda self, x: "<code>%s</code>" %(x.group(1))
+    code_span = lambda self, x: "<code>%s</code>" %(x.group(1).replace("<", "&lt").replace(">", "&gt"))
 
     def links(self, match: re.Match) -> str:
         """
@@ -303,7 +303,7 @@ class Renderer:
             line = file.readline()
             line_count += 1
             if line == "" or re.match(r"```\n?", line): break
-            result += line
+            result += line.replace("<", "&lt").replace(">", "&gt")
         result += "</code></pre>\n"
         return (result, line_count + 1)
 
@@ -326,7 +326,7 @@ class Renderer:
                 file.seek(pos)
                 line_count -= 1
                 break
-            result += match.group(2)
+            result += match.group(2).replace("<", "&lt").replace(">", "&gt")
         result += "</code></pre>\n"
         return (result, line_count + 1)
 
@@ -480,7 +480,7 @@ if __name__ == "__main__":
             result += line
         result += "</code></pre>\n"
         return (result, line_count + 1)
-    file = open("test.md")
+    file = open("readme.md")
     result, metadata = m2hr.render(file, True, True, "imgs")
     result.close()
     print(metadata)

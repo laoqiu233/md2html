@@ -2,22 +2,92 @@
 2<p>Made by Dmitri Qiu.</p>
 3<h2>Description</h2>
 4<p>MD2HTML parser is a easy to use <a href=https://daringfireball.net/projects/markdown/ title="About Markdown">Markdown</a> parser/renderer written in Python. It's extendable, fast, and user friendly.</p>
-5<h2>Usage</h2>
-6<p>Import MD2HTML to your project by <code>import MD2HTML as m2h</code> and then write the following code:</p>
-7<pre><code>
+6<hr>
+7<h1>Usage</h1>
+8<p>Import MD2HTML to your project by <code>import MD2HTML as m2h</code> and then write the following code:</p>
+9<pre><code>
 with open("Your md doc.md") as doc:
     renderer = m2h.Renderer()
     result, metadata = renderer.render(doc, False, True, "Your/Image/Folder") # The first boolean is for not displaying line count
                                                                               # The second is for return as file object
     result.close()
 </code></pre>
-14<p>Then, you will see a file named <code>"Your md doc.html"</code> show up in your project folder. Congrats! You rendered a MD file to html using M2H for the first time!</p>
-16<h2>Licensing</h2>
-17<p>MD2HTML is licensed under <a href=https://choosealicense.com/licenses/gpl-3.0/ title="The license">GNU GPL V3.0</a></br>(The license is longer than my code dude tf)</p>
-19<hr>
-20<h1>Everything down below is written for <i>testing purposes</i></h1>
-21<h2>Capybara facts</h2>
-22<ul>
+16<p>Then, you will see a file named <code>"Your md doc.html"</code> show up in your project folder. Congrats! You rendered a MD file to html using M2H for the first time!</p>
+18<h2>Custom tags</h2>
+19<p>Adding custom tags in m2h is as easy as writing a simple parsing function! Your function will need to look like this:</p>
+21<pre><code>
+def your_func(self, line, file, line_count):
+    # Parsing
+    return (parsed_text, line_count + 1)
+</code></pre>
+26<p>And then just use a decorator or a function to add your custom parsing function into the renderer!</p>
+27<pre><code>
+# Using a function
+renderer.addBlockElem(r"Your regex pattern", your_func)
+
+# Using a decorator
+@renderer.addBlockElem(r"Your regex pattern")
+def your_func(self, line, file, line_count):
+    # Parsing
+    return (parsed_text, line_count + 1)
+</code></pre>
+37<p>After adding your custom function, you can just render like you usually do.</p>
+38<h2>Examples</h2>
+39<p>The example is a really simple custom md tag that renders text in a <code>&ltcode&gt</code> element but the text inside it is all red. First, we need to create a parsing function.</p>
+41<pre><code>
+renderer = m2h.Renderer()
+# Make the function a custom tag parser.
+@renderer.addBlockElem(r"\|\|\|\n?")
+def redCode(self, line, file, line_count):
+    """
+        'self' argument is the renderer itself, use self to access functions in renderers, or variables like emphasis_tags, md_tags.
+        'line' argument is the first matched line of your regex pattern.
+        'file' argument is the file that the renderer is parsing.
+        'line_count' argument is the line count of the line matched, don't forget to add 1 to this argument everytime you use the file.readline() function, and if the next line isn't matching your md tag, you should subtract 1 from line_count.
+        All parsing function should have this four arguments(Including 'self'). 
+    """
+    # Currently 'line' should be our first matched text, which is '|||'(The regex pattern is r"\|\|\|\n?")
+    result = "&ltpre&gt&ltcode&gt\n" # Open the html tags
+    # Make a loop to parse until eof or not matching text
+    while True:
+        # Read a new line and add the line_count
+        line = file.readline()
+        line_count += 1
+        # Check if it's the eof our end of element
+        if line == "" or re.match(r"\|\|\|\n?", line): break
+        # If not add the line to our parsed text
+        result += line
+    result += "&lt/code&gt&lt/pre&gt\n" # Close the html tags
+    return (result, line_count + 1)
+    """
+        The returned value should be a tuple containing the parsed text and the line count of the first line after this md element. 
+    """
+</code></pre>
+70<p>Now let's try adding a custom emphasis parser that makes a span of text red and bold.</p>
+71<pre><code>
+renderer = m2h.Renderer()
+@renderer.addEmphasis(r"\|(.+)\|")
+def redText(self, match):
+    """
+        The 'self' argument is the same as the block element parser.
+        'match' argument is the match or your regexr pattern.
+    """
+    # In emphasis parsers you only need to return the rendered text.
+    return "&ltspan style=\"color:red; font-weight:bold;\"&gt%s&lt/span&gt" %(match.group(0))
+</code></pre>
+82<p>Both emphasis and block element parsers can be written in a lambda function, as long as they have the correct arguments and return types:</p>
+83<pre><code>
+renderer = m2h.Renderer()
+redText = lambda self, match: "&ltspan style=\"color:red; font-weight:bold;\"&gt%s&lt/span&gt" %(match.group(0))
+renderer.addEmphasis(r"\|(.+)\|", redText) 
+</code></pre>
+88<hr>
+89<h2>Licensing</h2>
+90<p>MD2HTML is licensed under <a href=https://choosealicense.com/licenses/gpl-3.0/ title="The license">GNU GPL V3.0</a></br>(The license is longer than my code dude tf)</p>
+93<hr>
+94<h1>Everything down below is written for <i>testing purposes</i></h1>
+95<h2>Capybara facts</h2>
+96<ul>
     <li>
         <p>Capybaras are cute!  </br></p>
     </li>
@@ -42,17 +112,17 @@ with open("Your md doc.md") as doc:
         <p>Capybaras are generally cool dudes to hang out with</p>
     </li>
 </ul>
-35<h2>Cool cats</h2>
-36<p>Shuchi senpai</br><img src="https://static.tvtropes.org/pmwiki/pub/images/cat_6.jpg" alt="best boi" title="Id smash"></br>Maxwell the cat</br><img src="imgs\Maxwell.png" alt="maxwell the cat" title="qt3.14"></br>^ This won't render on github because this uses the dedicated image folder feature in the parser</p>
-42<pre><code>
+109<h2>Cool cats</h2>
+110<p>Shuchi senpai</br><img src="https://static.tvtropes.org/pmwiki/pub/images/cat_6.jpg" alt="best boi" title="Id smash"></br>Maxwell the cat</br><img src="imgs\Maxwell.png" alt="maxwell the cat" title="qt3.14"></br>^ This won't render on github because this uses the dedicated image folder feature in the parser</p>
+116<pre><code>
 This is code
 This is the second line of the code
 </code></pre>
-44<pre><code>
+118<pre><code>
 This is code too
 </code></pre>
-47<br>
-48<blockquote>
+121<br>
+122<blockquote>
 <p>A great philosopher once said:</p>
 <blockquote>
 <p><s><b>Yiff</b> me daddy <i>uwu</i></s></br>And then he wrote this piece of code:</p>
@@ -64,8 +134,8 @@ def yiff():
    # Aww yes give me the good ***y e e f s***
 </code></pre>
 </blockquote>
-57<br>
-58<table style="border:1px solid black;min-width: 500px">
+131<br>
+132<table style="border:1px solid black;min-width: 500px">
 <tbody>
     <tr>
         <th style="text-align:left;border:1px solid black;width:33%;">Table</th>
@@ -90,4 +160,4 @@ def yiff():
     </tr>
 </tbody>
 </table>
-62<p>^I don't know why this table doesn't render properly on github, it works fine using my parser</p>
+136<p>^I don't know why this table doesn't render properly on github, it works fine using my parser</p>
