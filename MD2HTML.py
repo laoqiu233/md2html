@@ -165,6 +165,11 @@ class Renderer:
             line = file.readline()
             line = line[:-1] if line[-1:] == "\n" else line
             if line == "": break
+            if re.match(r"([-=]){3,}", line):
+                if re.match(r"([-=]){3,}", line).group(1) == "-":
+                    return ("<h2>%s</h2>\n" %(self.putEmphasis(text[:-2] if text[-2:] == "  " else text)), line_count + 1)
+                else:
+                    return ("<h1>%s</h1>\n" %(self.putEmphasis(text[:-2] if text[-2:] == "  " else text)), line_count + 1)
             matched = False
             for i in list(self.md_tags.keys()) + list(self.custom_md_tags.keys()):
                 if i == pattern: continue
@@ -408,6 +413,8 @@ class Renderer:
             metadata[match.group(1)] = match.group(2)
         return (metadata, line_count + 1)
 
+    # Uncomment this line if you want the render time to be printed
+    #@count_time
     def render(self, file: TextIOWrapper, line_count_display: bool = False, return_file: bool = False, img_dir:str = "") -> TextIOWrapper:
         """
             Takes in a file and returns the rendered HTML formatted file.
