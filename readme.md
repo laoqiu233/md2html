@@ -79,7 +79,7 @@ def redText(self, match):
     # In emphasis parsers you only need to return the rendered text.
     return "<span style=\"color:red; font-weight:bold;\">%s</span>" %(match.group(0))
 ```
-Emphasis and block element parsers all can be written in a lambda function, as long as they have the correct arguments and return types:
+Both emphasis and block element parsers can be written in a lambda function, as long as they have the correct arguments and return types:
 ```python
 renderer = m2h.Renderer()
 redText = lambda self, match: "<span style=\"color:red; font-weight:bold;\">%s</span>" %(match.group(0))
@@ -89,6 +89,7 @@ renderer.addEmphasis(r"\|(.+)\|", redText)
 ## Licensing
 MD2HTML is licensed under [GNU GPL V3.0](https://choosealicense.com/licenses/gpl-3.0/ "The license")  
 (The license is longer than my code dude tf)
+
 ---
 # Everything down below is written for *testing purposes*
 ## Capybara facts
