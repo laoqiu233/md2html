@@ -443,6 +443,7 @@ class Renderer:
                 if re.match(i, line):
                     if line_count_display: result += str(line_count)
                     output = self.custom_md_tags[i](line, file, line_count)
+                    result += output[0]
                     line_count = output[1]
                     rendered = True
                     break
@@ -477,7 +478,7 @@ if __name__ == "__main__":
             line_count += 1
             if line == "" or re.match(r"\|{3}", line): break
             result += line
-        result += "</code></pre>"
+        result += "</code></pre>\n"
         return (result, line_count + 1)
     file = open("test.md")
     result, metadata = m2hr.render(file, True, True, "imgs")
