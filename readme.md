@@ -2,6 +2,7 @@
 Made by Dmitri Qiu.
 ## Description
 MD2HTML parser is a easy to use [Markdown](https://daringfireball.net/projects/markdown/ "About Markdown") parser/renderer written in Python. It's extendable, fast, and user friendly.
+
 ---
 # Usage
 Import MD2HTML to your project by `import MD2HTML as m2h` and then write the following code:
