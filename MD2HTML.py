@@ -27,22 +27,25 @@ class Renderer:
         self.emphasis_tags = {   
             re.compile(r"\!\[(.*?)\]\s?\((.+?)\)"): self.images,                                                            # Images
             re.compile(r"\[(.+)\]\s?\((.+?)\)"): self.links,                                                               # Hyper links
-            re.compile(r"(?!<img\ssrc=\".*)[*_]{2}(.+)[*_]{2}(?!.*\">)"): lambda x: "<b>%s</b>" %(x.group(1)),     # Bold
-            re.compile(r"(?!<img\ssrc=\".*)[*_](.+)[*_](?!.*\">)"): lambda x: "<i>%s</i>" %(x.group(1)),           # Italics
-            re.compile(r"(?!<img\ssrc=\".*)~{2}(.+)~{2}(?!.*\">)"): lambda x: "<s>%s</s>" %(x.group(1)),           # Strike through
-            re.compile(r"(?!<img\ssrc=\".*)`(.+?)`(?!.*\">)"): lambda x: "<code>%s</code>" %(x.group(1)),          # Code highlight
+            re.compile(r"(?!<img\ssrc=\".*)[*_]{2}(.+)[*_]{2}(?!.*\">)"): self.bold,       # Bold
+            re.compile(r"(?!<img\ssrc=\".*)[*_](.+)[*_](?!.*\">)"): self.italic,           # Italics
+            re.compile(r"(?!<img\ssrc=\".*)~{2}(.+)~{2}(?!.*\">)"): self.strike,           # Strike through
+            re.compile(r"(?!<img\ssrc=\".*)`(.+?)`(?!.*\">)"): self.code_span,             # Code highlight
             re.compile(r"(?!<code>)#(.*)#(?!</code>)"): ""
         }
         self.md_tags = {
             re.compile(r"(#{1,6})\s(.*(?:~|_|\*|\b))(?:\s+#+)?\n?"): self.headers,                   # Headers
-            self.pattern_line_break: lambda line,file,line_count: ("<br>\n", line_count + 1),        # Line breaks
-            re.compile(r"[-\*_]{3,}"): lambda line,file,line_count: ("<hr>\n", line_count + 1),      # Horizontal rulers
+            self.pattern_line_break: self.line_break,                                                # Line breaks
+            re.compile(r"[-\*_]{3,}"): self.horizontal_rule,                                         # Horizontal rulers
             re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?"): self.lists,                                     # Lists
             re.compile(r"```\n?"): self.code_reverse_quote,                                          # Code blocks with reversed quotation marks
             re.compile(r"(\t|\s{4})(.*\n?)"): self.code_tab,                                         # Code blocks with tabs
             re.compile(r">\s?.*"): self.block_quote,                                                 # Block quotes
-            re.compile(r"\|?((?:\s*.+\s*\|)+)(\s*[^\|\n]+\s*)\|?"): self.table,                                # Tables
+            re.compile(r"\|?((?:\s*.+\s*\|)+)(\s*[^\|\n]+\s*)\|?"): self.table,                      # Tables
+            re.compile(r".+"): self.paragraph,                                                       # Paragraphs
         }
+        self.custom_emphasis_tags = {}
+        self.custom_md_tags = {}
 
     # --- Constants ---
     pattern_line_break = re.compile(r"(\s|\t)*\n")
@@ -57,15 +60,27 @@ class Renderer:
                             - The function to be added
             Output values:  - None
         """
-        if func == None or type(func) != types.FunctionType:
+        if type(func) == str:
+            self.custom_emphasis_tags[pattern] = func
+        elif func == None:
             def decorator(func_):
                 self.func_ = types.MethodType(func_, self)
-                self.emphasis_tags[pattern] = self.func_
+                self.custom_emphasis_tags[pattern] = self.func_
                 return func_
             return decorator
-        else:
+        elif type(func) == types.FunctionType:
             self.func = types.MethodType(func, self)
-            self.emphasis_tags[pattern] = types.MethodType(func, self)
+            self.custom_emphasis_tags[pattern] = types.MethodType(func, self)
+        else:
+            raise TypeError
+
+    bold = lambda self, x: "<b>%s</b>" %(x.group(1))
+
+    italic = lambda self, x: "<i>%s</i>" %(x.group(1))
+
+    strike = lambda self, x: "<s>%s</s>" %(x.group(1))
+    
+    code_span = lambda self, x: "<code>%s</code>" %(x.group(1))
 
     def links(self, match: re.Match) -> str:
         """
@@ -91,6 +106,8 @@ class Renderer:
             Input values:   - Text with md emphasis tags in it
             Output values:  - Rendered text
         """
+        for i in self.custom_emphasis_tags:
+            line = re.sub(i, self.custom_emphasis_tags[i], line)
         for i in self.emphasis_tags:
             line = re.sub(i, self.emphasis_tags[i], line)
         return line
@@ -108,12 +125,18 @@ class Renderer:
         if func == None:
             def decorator(func_):
                 self.func_ = types.MethodType(func_, self)
-                self.md_tags[pattern] = self.func_
+                self.custom_md_tags[pattern] = self.func_
                 return func_
             return decorator
-        else:
+        elif type(func) == types.FunctionType:
             self.func = types.MethodType(func, self)
-            self.md_tags[pattern] = self.func
+            self.custom_md_tags[pattern] = self.func
+        else:
+            raise TypeError
+
+    line_break = lambda self,line,file,line_count: ("<br>\n", line_count + 1)
+
+    horizontal_rule = lambda self,line,file,line_count: ("<hr>\n", line_count + 1)
 
     def headers(self, line: str, file: TextIOWrapper, line_count: int) -> tuple:
         """
@@ -143,7 +166,7 @@ class Renderer:
             line = line[:-1] if line[-1:] == "\n" else line
             if line == "": break
             matched = False
-            for i in self.md_tags:
+            for i in list(self.md_tags.keys()) + list(self.custom_md_tags.keys()):
                 if i == pattern: continue
                 if re.match(i, line):
                     line_count -= 1
@@ -256,7 +279,7 @@ class Renderer:
                         child_par = True
                         break
                 if list_end: break
-            if reduce(lambda x,y: x | y, [1 if i not in tags_in_lists and re.match(i, line) else 0 for i in self.md_tags]) or (re.match(pattern_item, line) and not re.match(pattern_current_item, line)): 
+            if reduce(lambda x,y: x | y, [1 if i not in tags_in_lists and re.match(i, line) else 0 for i in self.md_tags]) and not re.match(pattern_current_item, line): 
                 file.seek(pos)
                 line_count -= 1
                 break
@@ -320,7 +343,7 @@ class Renderer:
         TempIO = StringIO(result)
         result = self.render(TempIO)
         del TempIO
-        result = "<blockquote>\n" + result + "</blockquote>\n"
+        result = "<blockquote>\n" + result[0] + "</blockquote>\n"
         return (result, line_count + 1)
 
     def table(self, line: str, file: TextIOWrapper, line_count: int) -> tuple:
@@ -368,6 +391,23 @@ class Renderer:
 
     # --- Rendering ---
 
+    def getMeta(self, line: str, file: TextIOWrapper, line_count: int) -> dict:
+        pattern = re.compile(r"(.+)\:\s+(.*)")
+        metadata = {}
+        while True:
+            pos = file.tell()
+            line = file.readline()
+            line_count += 1
+            if line == "" or line == "---" or line == "---\n": break
+            match = re.match(pattern, line)
+            if not match:
+                print("Error while parsing metadata: Error formating in line %s" %(line_count))
+                file.seek(pos)
+                metadata = {}
+                break
+            metadata[match.group(1)] = match.group(2)
+        return (metadata, line_count + 1)
+
     def render(self, file: TextIOWrapper, line_count_display: bool = False, return_file: bool = False, img_dir:str = "") -> TextIOWrapper:
         """
             Takes in a file and returns the rendered HTML formatted file.
@@ -380,42 +420,46 @@ class Renderer:
                             - Matadata in the file (If it has any)
         """
         self.img_dir = img_dir
-        # Adds the paragraph tag as the last tag to test.
-        md_tags = self.md_tags.copy()
-        md_tags[r".+"] = self.paragraph
         line_count = 1
         result = ""
+        metadata = {}
+        pos = file.tell()
+        line = file.readline()
+        if line == "---" or line == "---\n":
+            metadata, line_count = self.getMeta(line, file, line_count)
+        else: file.seek(pos)
         while True:
             line = file.readline()
             if line == "": break
-            for i in md_tags:
+            rendered = False
+            for i in self.custom_md_tags:
                 if re.match(i, line):
                     if line_count_display: result += str(line_count)
-                    output = md_tags[i](line, file, line_count)
+                    output = self.custom_md_tags[i](line, file, line_count)
+                    line_count = output[1]
+                    rendered = True
+                    break
+            if rendered: continue
+            for i in self.md_tags:
+                if re.match(i, line):
+                    if line_count_display: result += str(line_count)
+                    output = self.md_tags[i](line, file, line_count)
                     result += output[0]
                     line_count = output[1]
                     break
-        del md_tags
         if return_file:
             f = open("%s.html" %(re.match(r"(.+)\.md", file.name).group(1)), "w")
             f.write(result)
-            return f
+            return (f, metadata)
         else:
-            return result
-    
-    def test(self, pattern):
-        def decorator(func):
-            print(self, pattern, func)
-            return func
-        return decorator
+            return (result, metadata)
 
 # --- Testing ---
 
 if __name__ == "__main__":
     m2hr = Renderer()
     # Adding a custom emphasis renderer
-    def redText(self, match):
-        return "<span style=\"color:red\">%s</span>" %(match.group(1))
+    redText = lambda self,match: "<span style=\"color:red\">%s</span>" %(match.group(1))
     m2hr.addEmphasis(r"\|(.*)\|", redText)
     # Adding a custom block element renderer
     @m2hr.addBlockElem(r"\|{3}")
@@ -428,5 +472,7 @@ if __name__ == "__main__":
             result += line
         result += "</code></pre>"
         return (result, line_count + 1)
-    result = m2hr.render(open("readme.md"), False, True, "imgs")
+    file = open("test.md")
+    result, metadata = m2hr.render(file, True, True, "imgs")
     result.close()
+    print(metadata)

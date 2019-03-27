@@ -1,23 +1,23 @@
-<h1>MD 2 HTML PARSER</h1>
-<p>Made by Dmitri Qiu.</p>
-<h2>Description</h2>
-<p>MD2HTML parser is a easy to use <a href=https://daringfireball.net/projects/markdown/ title="About Markdown">Markdown</a> parser/renderer written in Python. It's extendable, fast, and user friendly.</p>
-<h2>Usage</h2>
-<p>Import MD2HTML to your project by <code>import MD2HTML as m2h</code> and then write the following code:</p>
-<pre><code>
+1<h1>MD 2 HTML PARSER</h1>
+2<p>Made by Dmitri Qiu.</p>
+3<h2>Description</h2>
+4<p>MD2HTML parser is a easy to use <a href=https://daringfireball.net/projects/markdown/ title="About Markdown">Markdown</a> parser/renderer written in Python. It's extendable, fast, and user friendly.</p>
+5<h2>Usage</h2>
+6<p>Import MD2HTML to your project by <code>import MD2HTML as m2h</code> and then write the following code:</p>
+7<pre><code>
 with open("Your md doc.md") as doc:
     renderer = m2h.Renderer()
-    result = renderer.render(doc, False, True, "Your/Image/Folder") # The first boolean is for not displaying line count
-                                                                    # The second is for return as file object
+    result, metadata = renderer.render(doc, False, True, "Your/Image/Folder") # The first boolean is for not displaying line count
+                                                                              # The second is for return as file object
     result.close()
 </code></pre>
-<p>Then, you will see a file named <code>"Your md doc.html"</code> show up in your project folder. Congrats! You rendered a MD file to html using M2H for the first time!</p>
-<h2>Licensing</h2>
-<p>MD2HTML is licensed under <a href=https://choosealicense.com/licenses/gpl-3.0/ title="The license">GNU GPL V3.0</a></br>(The license is longer than my code dude tf)</p>
-<hr>
-<h1>Everything down below is written for <i>testing purposes</i></h1>
-<h2>Capybara facts</h2>
-<ul>
+14<p>Then, you will see a file named <code>"Your md doc.html"</code> show up in your project folder. Congrats! You rendered a MD file to html using M2H for the first time!</p>
+16<h2>Licensing</h2>
+17<p>MD2HTML is licensed under <a href=https://choosealicense.com/licenses/gpl-3.0/ title="The license">GNU GPL V3.0</a></br>(The license is longer than my code dude tf)</p>
+19<hr>
+20<h1>Everything down below is written for <i>testing purposes</i></h1>
+21<h2>Capybara facts</h2>
+22<ul>
     <li>
         <p>Capybaras are cute!  </br></p>
     </li>
@@ -42,17 +42,17 @@ with open("Your md doc.md") as doc:
         <p>Capybaras are generally cool dudes to hang out with</p>
     </li>
 </ul>
-<h2>Cool cats</h2>
-<p>Shuchi senpai</br><img src="https://static.tvtropes.org/pmwiki/pub/images/cat_6.jpg" alt="best boi" title="Id smash"></br>Maxwell the cat</br><img src="imgs\Maxwell.png" alt="maxwell the cat" title="qt3.14"></p>
-<pre><code>
+35<h2>Cool cats</h2>
+36<p>Shuchi senpai</br><img src="https://static.tvtropes.org/pmwiki/pub/images/cat_6.jpg" alt="best boi" title="Id smash"></br>Maxwell the cat</br><img src="imgs\Maxwell.png" alt="maxwell the cat" title="qt3.14"></br>^ This won't render on github because this uses the dedicated image folder feature in the parser</p>
+42<pre><code>
 This is code
 This is the second line of the code
 </code></pre>
-<pre><code>
+44<pre><code>
 This is code too
 </code></pre>
-<br>
-<blockquote>
+47<br>
+48<blockquote>
 <p>A great philosopher once said:</p>
 <blockquote>
 <p><s><b>Yiff</b> me daddy <i>uwu</i></s></br>And then he wrote this piece of code:</p>
@@ -64,8 +64,8 @@ def yiff():
    # Aww yes give me the good ***y e e f s***
 </code></pre>
 </blockquote>
-<br>
-<table style="border:1px solid black;min-width: 500px">
+57<br>
+58<table style="border:1px solid black;min-width: 500px">
 <tbody>
     <tr>
         <th style="text-align:left;border:1px solid black;width:33%;">Table</th>
@@ -90,4 +90,4 @@ def yiff():
     </tr>
 </tbody>
 </table>
-<p>^I don't know why this table doesn't render properly on github, it works fine using my parser</p>
+62<p>^I don't know why this table doesn't render properly on github, it works fine using my parser</p>
