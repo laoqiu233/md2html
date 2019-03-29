@@ -25,30 +25,31 @@ class Renderer:
     def __init__(self):
         self.img_dir = ""
         self.emphasis_tags = {   
-            re.compile(r"\!\[(.*?)\]\s?\((.+?)\)"): self.images,                                                            # Images
-            re.compile(r"\[(.+)\]\s?\((.+?)\)"): self.links,                                                               # Hyper links
-            re.compile(r"(?!<img\ssrc=\".*)[*_]{2}(.+)[*_]{2}(?!.*\">)"): self.bold,       # Bold
-            re.compile(r"(?!<img\ssrc=\".*)[*_](.+)[*_](?!.*\">)"): self.italic,           # Italics
-            re.compile(r"(?!<img\ssrc=\".*)~{2}(.+)~{2}(?!.*\">)"): self.strike,           # Strike through
-            re.compile(r"(?!<img\ssrc=\".*)`(.+?)`(?!.*\">)"): self.code_span,             # Code highlight
+            re.compile(r"\!\[(.*?)\](\(.+?\)| ?\[.*?\])"): self.images,                                                            # Images
+            re.compile(r"\[(.+)\](\(.+?\)| ?\[.*?\])"): self.links,                                                               # Hyper links
+            re.compile(r"(?!<img src=\".*)[*_]{2}(.+)[*_]{2}(?!.*\">)"): self.bold,       # Bold
+            re.compile(r"(?!<img src=\".*)[*_](.+)[*_](?!.*\">)"): self.italic,           # Italics
+            re.compile(r"(?!<img src=\".*)~{2}(.+)~{2}(?!.*\">)"): self.strike,           # Strike through
+            re.compile(r"(?!<img src=\".*)`(.+?)`(?!.*\">)"): self.code_span,             # Code highlight
             re.compile(r"(?!<code>)#(.*)#(?!</code>)"): ""
         }
         self.md_tags = {
-            re.compile(r"(#{1,6})\s(.*(?:~|_|\*|\b))(?:\s+#+)?\n?"): self.headers,                   # Headers
+            re.compile(r"(#{1,6}) (.*(?:~|_|\*|\b))(?: +#+)?\n?"): self.headers,                   # Headers
             self.pattern_line_break: self.line_break,                                                # Line breaks
             re.compile(r"[-\*_]{3,}"): self.horizontal_rule,                                         # Horizontal rulers
-            re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?"): self.lists,                                     # Lists
+            re.compile(r"(\+|-|\*|\d+\.) (.*)\n?"): self.lists,                                     # Lists
             re.compile(r"```\n?"): self.code_reverse_quote,                                          # Code blocks with reversed quotation marks
-            re.compile(r"(\t|\s{4})(.*\n?)"): self.code_tab,                                         # Code blocks with tabs
-            re.compile(r">\s?.*"): self.block_quote,                                                 # Block quotes
-            re.compile(r"\|?((?:\s*.+\s*\|)+)(\s*[^\|\n]+\s*)\|?"): self.table,                      # Tables
+            re.compile(r"(\t| {4})(.*\n?)"): self.code_tab,                                         # Code blocks with tabs
+            re.compile(r"> ?.*"): self.block_quote,                                                 # Block quotes
+            re.compile(r"\|?((?: *.+ *\|)+)( *[^\|\n]+ *)\|?"): self.table,                      # Tables
+            re.compile(r"\[.+\]:[ \t]*(<.+>|.+)"): self.references_func,
             re.compile(r".+"): self.paragraph,                                                       # Paragraphs
         }
         self.custom_emphasis_tags = {}
         self.custom_md_tags = {}
 
     # --- Constants ---
-    pattern_line_break = re.compile(r"(\s|\t)*\n")
+    pattern_line_break = re.compile(r"[ \t]*\n")
 
     # --- Text emphasis renderers ---
 
@@ -89,12 +90,31 @@ class Renderer:
             Output values:  - Rendered text
         """
         text, url = match.groups()
+        match_url = re.match(r" ?\[(.*)\]", url)
+        if match_url:
+            if match_url.group(1) and self.references.get(match_url.group(1).lower(), False):
+                url = self.references[match_url.group(1).lower()]
+            elif not match_url.group(1):
+                url = self.references.get(text.lower(), "error")
+            else: url = "error"
+        else:
+            url = url[1:-1]
         url = url.split(" ", 1)
         #print(url, match.groups())
-        return "<a%s%s>%s</a>" %(" href=%s" %(url[0]), " title=%s" %(url[1]) if len(url) >=2 else "", text)
+        return "<a%s%s>%s</a>" %(" href=\"%s\"" %(url[0]), " title=%s" %(url[1]) if len(url) >=2 else "", text)
 
     def images(self, match: re.Match) -> str:
         text, url = match.groups()
+        match_url = re.match(r" ?\[(.*)\]", url)
+        if match_url:
+            if match_url.group(1) and self.references.get(match_url.group(1).lower(), False):
+                url = self.references[match_url.group(1).lower()]
+            elif not match_url.group(1):
+                url = self.references.get(text.lower(), "error")
+            else: url = "error"
+        else:
+            url = url[1:-1]
+        print(text, url)
         url = url.split(" ", 1)
         if not re.match(r"https?://(.*?\.)?[a-zA-Z-]+\.[a-zA-Z]+", url[0]): url[0] = os.path.join(self.img_dir, url[0])
         #print(url, match.groups())
@@ -144,7 +164,7 @@ class Renderer:
             Input values:   - Standard m2h function inputs
             Output values:  - Standard m2h function outputs
         """
-        match = re.match(r"(#{1,6})\s(.*(?:~|_|\*|\b))(?:\s+#+)?\n?", line)
+        match = re.match(r"(#{1,6}) (.*(?:~|_|\*|\b))(?: +#+)?\n?", line)
         length = len(match.group(1))
         #print(match.group(2))
         return ("<h%s>%s</h%s>\n" %(length, self.putEmphasis(match.group(2)), length), line_count + 1)
@@ -196,8 +216,8 @@ class Renderer:
                             - tab_length: The tab length of this item
             Output values:  - Rendered text
         """
-        pattern_item = r"(\s{%s,%s}|\t{%s})(\+|-|\*|\d+\.)\s(.*\n?)" %(tab_length * 4, tab_length * 4 + 3, tab_length)
-        pattern_item_child = r"(\s{%s,%s}|\t{%s})(\+|-|\*|\d+\.)\s(.*)\n?" %(tab_length * 4 + 4, tab_length * 4 + 7, tab_length + 1)
+        pattern_item = r"( {%s,%s}|\t{%s})(\+|-|\*|\d+\.) (.*\n?)" %(tab_length * 4, tab_length * 4 + 3, tab_length)
+        pattern_item_child = r"( {%s,%s}|\t{%s})(\+|-|\*|\d+\.) (.*)\n?" %(tab_length * 4 + 4, tab_length * 4 + 7, tab_length + 1)
         list_type = ""
         result = ""
         #print("-----\n%s\n-----" %(text_), child_par)
@@ -256,10 +276,10 @@ class Renderer:
             Input values:   - Standard m2h function inputs
             Return values:  - Standard m2h function outputs
         """
-        tags_in_lists = [self.pattern_line_break, re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?"), re.compile(r".+"), re.compile(r"(\t|\s{4})(.*\n?)")]
-        pattern_item = re.compile(r"(\+|-|\*|\d+\.)\s(.*)\n?")
+        tags_in_lists = [self.pattern_line_break, re.compile(r"(\+|-|\*|\d+\.) (.*)\n?"), re.compile(r".+"), re.compile(r"(\t| {4})(.*\n?)")]
+        pattern_item = re.compile(r"(\+|-|\*|\d+\.) (.*)\n?")
         type_ = r"(\+|-|\*)" if re.match(r"(\+|-|\*)", re.match(pattern_item, line).group(1)) else r"(\d+\.)"
-        pattern_current_item = re.compile(r"%s\s(.*)\n?" %(type_))
+        pattern_current_item = re.compile(r"%s (.*)\n?" %(type_))
         full_list = line
         child_par = False
         while True:
@@ -313,7 +333,7 @@ class Renderer:
             Input values:   - Standard m2h function inputs
             Output values:  - Standard m2h function outputs
         """
-        pattern_code = re.compile(r"(\t|\s{4})(.*\n?)")
+        pattern_code = re.compile(r"(\t| {4})(.*\n?)")
         result = "<pre><code>\n"
         result += re.match(pattern_code, line).group(2)
         while True:
@@ -331,10 +351,10 @@ class Renderer:
         return (result, line_count + 1)
 
     def block_quote(self, line: str, file: TextIOWrapper, line_count: int) -> tuple:
-        pattern_block_quote = re.compile(r">?\s?(.*\n?)")
+        pattern_block_quote = re.compile(r">? ?(.*\n?)")
         result = ""
         result += re.match(pattern_block_quote, line).group(1)
-        block_quote_md_tags = [re.compile(r">\s?.*"), re.compile(r".+")]
+        block_quote_md_tags = [re.compile(r"> ?.*"), re.compile(r".+")]
         while True:
             pos = file.tell()
             line = file.readline()
@@ -352,7 +372,7 @@ class Renderer:
         return (result, line_count + 1)
 
     def table(self, line: str, file: TextIOWrapper, line_count: int) -> tuple:
-        pattern_row = re.compile(r"\|?((?:\s*.+\s*\|)+)(\s*[^\|\n]+\s*)\|?")
+        pattern_row = re.compile(r"\|?((?: *.+ *\|)+)( *[^\|\n]+ *)\|?")
         result = "<table style=\"border:1px solid black;min-width: 500px\">\n"
         head = "".join(re.match(pattern_row, line).groups()).split("|")
         length = len(head)
@@ -360,24 +380,24 @@ class Renderer:
         pos = file.tell()
         line = file.readline()
         line_count += 1
-        if line == "" or not re.match(r"\|((?::*-{3,}:*\|){%s})(\s*:*-{3,}:*\s*)\|" %(length-1), line):
+        if line == "" or not re.match(r"\|((?::*-{3,}:*\|){%s})( *:*-{3,}:* *)\|" %(length-1), line):
             file.seek(pos)
             return ("<p>%s</p>\n" %(first_line if first_line[-1] != "\n" else line[-1:]), line_count)
         del first_line
-        align = "".join(re.match(r"\|((?::*-{3,}:*\|){%s})(\s*:*-{3,}:*\s*)\|" %(length-1), line).groups()).split("|")
+        align = "".join(re.match(r"\|((?::*-{3,}:*\|){%s})( *:*-{3,}:* *)\|" %(length-1), line).groups()).split("|")
         for index, i in enumerate(align):
-            if re.match(r"\s*:-+:\s*", i):
+            if re.match(r" *:-+: *", i):
                 align[index] = " style=\"text-align:center;border:1px solid black;width:33%;\""
-            elif re.match(r"\s*:-+\s*", i):
+            elif re.match(r" *:-+ *", i):
                 align[index] = " style=\"text-align:left;border:1px solid black;width:33%;\""
-            elif re.match(r"\s*-+:\s*", i):
+            elif re.match(r" *-+: *", i):
                 align[index] = " style=\"text-align:right;border:1px solid black;width:33%;\""
             else:
                 align[index] = ""
         result += "<tbody>\n" + " " * 4 + "<tr>\n"
         result += "\n".join([" " * 8 + "<th%s>%s</th>" %(align[index], i) for index, i in enumerate(head)])
         result += "\n" + " " * 4 + "</tr>\n"
-        pattern_row = re.compile(r"\|?((?:\s*.+?\s*\|){%s})(\s*[^\|\n]+\s*)\|?" %(length - 1))
+        pattern_row = re.compile(r"\|?((?: *.+? *\|){%s})( *[^\|\n]+ *)\|?" %(length - 1))
         while True:
             pos = file.tell()
             line = file.readline()
@@ -394,10 +414,21 @@ class Renderer:
         result += "</tbody>\n</table>\n"
         return (self.putEmphasis(result), line_count)
 
+    def references_func(self, line:str, file: TextIOWrapper, line_count: int) -> tuple:
+        if re.match(r"\[.+\]:[ \t]*(<.+>|.+)[ \t]+[\"\'\(].+[\"\'\)]", line): return ("", line_count + 1) 
+        else:
+            pos = file.tell()
+            line = file.readline()
+            if re.match(r"[ \t]*[\"\'\(].+[\"\'\)]", line):
+                return ("", line_count + 2)
+            else:
+                file.seek(pos)
+                return ("", line_count + 1)
+
     # --- Rendering ---
 
     def getMeta(self, line: str, file: TextIOWrapper, line_count: int) -> dict:
-        pattern = re.compile(r"(.+)\:\s+(.*)")
+        pattern = re.compile(r"(.+)\: +(.*)")
         metadata = {}
         while True:
             pos = file.tell()
@@ -435,6 +466,21 @@ class Renderer:
         if line == "---" or line == "---\n":
             metadata, line_count = self.getMeta(line, file, line_count)
         else: file.seek(pos)
+
+        # Parse all reference links
+        self.references = {}
+        pos = file.tell()
+        lines = file.readlines()
+        file.seek(pos)
+        for index, line in enumerate(lines):
+            if re.match(r"\[(.+)\]:(?: |\t)+([^ ]+) +(?:[\"\'\(](.+)[\"\'\)])", line):
+                match = re.match(r"\[(.+)\]:(?: |\t)+([^ ]+) +(?:[\"\'\(](.+)[\"\'\)])", line)
+                self.references[match.group(1).lower()] = "%s \"%s\"" %(match.group(2), match.group(3))
+            elif re.match(r"\[(.+)\]:(?: |\t)+([^ ]+)", line):
+                match = re.match(r"\[(.+)\]:(?: |\t)+([^ \n]+)", line)
+                match2 = re.match(r"(?: |\t)*[\"\'\(](.+)[\"\'\)]", lines[index + 1]) if index < len(lines) - 1 else None
+                self.references[match.group(1).lower()] = "%s \"%s\"" %(match.group(2), "" if not match2 else match2.group(1))
+
         while True:
             line = file.readline()
             if line == "": break
